@@ -1,4 +1,4 @@
 
 
 run:
-	elixir src/main.exs
+	elixir src/alt_main.exs
