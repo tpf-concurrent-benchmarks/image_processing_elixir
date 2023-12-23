@@ -1,0 +1,21 @@
+version: "3.7"
+
+services:
+  worker:
+    image: elixir:latest # elixir:1.9.1-alpine
+    tty: true
+    stdin_open: true
+    working_dir: /app
+    volumes:
+      - ..:/app
+  manager:
+    image: elixir:latest # elixir:1.9.1-alpine
+    tty: true
+    stdin_open: true
+    working_dir: /app
+    volumes:
+      - ..:/app
+
+networks:
+  elixir_network:
+    driver: bridge
