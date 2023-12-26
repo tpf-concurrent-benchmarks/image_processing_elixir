@@ -2,27 +2,22 @@ version: "3.7"
 
 services:
   worker:
-    image: elixir:1.7.4
-    hostname: worker
-    tty: true
-    stdin_open: true
+    image: elixir:1.7.4 # elixir:latest # elixir:1.9.1-alpine
+    hostname: worker_{{.Task.Slot}}
     working_dir: /app
     volumes:
-      - ..:/app
-    networks:
-      - elixir_network
+      - ../distributed_pipeline:/app
+    command: iex --sname worker --cookie ${SECRET} -S mix
+    deploy:
+      replicas: ${WORKER_REPLICAS}
 
   manager:
-    image: elixir:1.7.4
+    image: elixir:1.7.4 # elixir:latest # elixir:1.9.1-alpine
     hostname: manager
     tty: true
     stdin_open: true
     working_dir: /app
     volumes:
-      - ..:/app
-    networks:
-      - elixir_network
-
-networks:
-  elixir_network:
-    driver: overlay
+      - ../distributed_pipeline:/app
+    environment:
+      - WORKER_REPLICAS=${WORKER_REPLICAS}
