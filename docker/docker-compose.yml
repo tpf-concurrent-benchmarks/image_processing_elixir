@@ -2,20 +2,27 @@ version: "3.7"
 
 services:
   worker:
-    image: elixir:latest # elixir:1.9.1-alpine
+    image: elixir:1.7.4
+    hostname: worker
     tty: true
     stdin_open: true
     working_dir: /app
     volumes:
       - ..:/app
+    networks:
+      - elixir_network
+
   manager:
-    image: elixir:latest # elixir:1.9.1-alpine
+    image: elixir:1.7.4
+    hostname: manager
     tty: true
     stdin_open: true
     working_dir: /app
     volumes:
       - ..:/app
+    networks:
+      - elixir_network
 
 networks:
   elixir_network:
-    driver: bridge
+    driver: overlay
