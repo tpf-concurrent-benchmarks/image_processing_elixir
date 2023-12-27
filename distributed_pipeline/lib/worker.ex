@@ -5,6 +5,10 @@ defmodule WorkSource do
   # the server is initialized with a start num and an end num
   # the server returns an increasing number when asked for work, until it reaches the end num
 
+  def start_link(arg) do
+    GenServer.start_link(__MODULE__, arg, name: __MODULE__)
+  end
+
   @impl true
   def init([start_num, end_num]) do
     {:ok, {start_num, end_num}}
@@ -13,6 +17,9 @@ defmodule WorkSource do
   @impl true
   def handle_call(:get_work, _from, state) do
     {start_num, end_num} = state
+
+    # wait a second before returning work
+    :timer.sleep(1000)
 
     if start_num <= end_num do
       {:reply, start_num, {start_num + 1, end_num}}
@@ -31,6 +38,10 @@ defmodule Worker do
   # the worker asks the server for work, and then does the work
   # the worker asks for more work until the server says there is no more work
 
+  def start_link(arg) do
+    GenServer.start_link(__MODULE__, arg, name: __MODULE__)
+  end
+
   @impl true
   def init(server_pid) do
     {:ok, server_pid}
@@ -40,6 +51,12 @@ defmodule Worker do
   def handle_call(:start, _from, server_pid) do
     ask_for_work(server_pid)
     {:reply, :ok, server_pid}
+  end
+
+  @impl true
+  def handle_cast(:start, server_pid) do
+    ask_for_work(server_pid)
+    {:noreply, server_pid}
   end
 
   def ask_for_work(server_pid) do
@@ -58,7 +75,8 @@ defmodule Worker do
 
   def shutdown() do
     IO.puts "No more work. Shutting down."
-    :ok
+    # terminate the process
+    Process.exit(self(), :shutdown)
   end
 end
 

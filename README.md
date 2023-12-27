@@ -13,9 +13,13 @@
 
 - DistributedPipeline.hello
 
+### test distributed app:
+
+- DistributedPipeline.distributed_count
+
 ## Next steps:
 
-- Connect nodes programmatically
-- Make pull architecture
-- Setup business nodes
-- Do business logic
+- [x] Connect nodes programmatically
+- [ ] Make pull architecture
+- [ ] Setup business nodes
+- [ ] Do business logic

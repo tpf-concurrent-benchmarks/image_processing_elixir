@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   worker:
-    image: elixir:1.7.4 # elixir:latest # elixir:1.9.1-alpine
+    image: elixir:1.7.4-alpine
     hostname: worker_{{.Task.Slot}}
     working_dir: /app
     volumes:
@@ -12,7 +12,7 @@ services:
       replicas: ${WORKER_REPLICAS}
 
   manager:
-    image: elixir:1.7.4 # elixir:latest # elixir:1.9.1-alpine
+    image: elixir:1.7.4-alpine
     hostname: manager
     tty: true
     stdin_open: true

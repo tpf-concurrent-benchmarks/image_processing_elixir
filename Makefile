@@ -22,14 +22,14 @@ worker_iex:
 worker_shell:
 	@if [ -z "$(num)" ]; then \
 		echo "Opening shell for worker.1"; \
-		docker exec -it $(shell docker ps -q -f name=ip_elixir_worker.1) bash; \
+		docker exec -it $(shell docker ps -q -f name=ip_elixir_worker.1) sh; \
 	else \
 		echo "Opening shell for worker.$(num)"; \
-		docker exec -it $(shell docker ps -q -f name=ip_elixir_worker.$(num)) bash; \
+		docker exec -it $(shell docker ps -q -f name=ip_elixir_worker.$(num)) sh; \
 	fi
 
 manager_iex:
 	docker exec -it $(shell docker ps -q -f name=ip_elixir_manager) iex --sname manager --cookie $(SECRET) -S mix
 
 manager_shell:
-	docker exec -it $(shell docker ps -q -f name=ip_elixir_manager) bash
+	docker exec -it $(shell docker ps -q -f name=ip_elixir_manager) sh
