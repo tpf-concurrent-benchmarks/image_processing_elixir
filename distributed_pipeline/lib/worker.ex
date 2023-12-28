@@ -14,8 +14,8 @@ defmodule Worker do
   end
 
   @impl true
-  def handle_cast(:start, state) do
-    source = state |> elem(0)
+  def handle_cast(:start, {source, sink, _pending} = state) do
+    GenServer.call(sink, :register_worker)
     mark_ready(source)
     {:noreply, state}
   end
@@ -62,20 +62,22 @@ defmodule Worker do
     {:noreply, state}
   end
 
-  defp mark_ready(source) do
-    GenServer.cast(source, {:ready, self()})
+  @impl true
+  def handle_call(:stop, _from, state) do
+    {:stop, :normal, :ok, state}
   end
 
-  def do_work(work) do
-    IO.puts "Doing work: #{work}"
-    work
+  defp mark_ready(source) do
+    GenServer.cast(source, {:ready, self()})
   end
 
   def pending_limit do
     10
   end
 
-  def shutdown() do
-    Process.exit(self(), :shutdown)
+  def do_work(work) do
+    IO.puts "Worker #{inspect self()} doing work #{inspect work}"
+    :timer.sleep(500)
+    work
   end
 end

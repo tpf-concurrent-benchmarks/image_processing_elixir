@@ -1,13 +1,21 @@
 WORKER_REPLICAS ?= 3
 SECRET ?= secret
 
-run:
-	elixir src/alt_main.exs
-
 deploy_local:
 	WORKER_REPLICAS=$(WORKER_REPLICAS) SECRET=$(SECRET) docker stack deploy -c docker/docker-compose.yml ip_elixir 
 
 remove_local:
+	-docker service rm $(shell docker service ls -q -f name=ip_elixir) || echo "No services to remove"
+
+up:
+	make remove_local
+	make deploy_local
+	@echo "Waiting for services to start..."
+	@while [ $$(docker service ls --filter name=ip_elixir --format "{{.Replicas}}" | grep -v "0/0" | awk -F/ '{if ($$1!=$$2) print $$0}' | wc -l) -gt 0 ]; do sleep 1; done
+	@echo "All services are up and running."
+	make manager_iex
+
+full_remove_local:
 	docker stack rm ip_elixir
 
 worker_iex:

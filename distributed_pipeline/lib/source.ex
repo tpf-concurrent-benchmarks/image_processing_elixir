@@ -29,4 +29,9 @@ defmodule WorkSource do
     end
   end
 
+  @impl true
+  def handle_call(:stop, _from, state) do
+    {:stop, :normal, :ok, state}
+  end
+
 end

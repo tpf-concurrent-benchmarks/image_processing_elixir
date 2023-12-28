@@ -13,8 +13,8 @@ defmodule DistributedPipeline do
     {:ok, worker_pid}
   end
 
-  def start_remote_worker(source, sink) do
-    remote = :worker@worker_1
+  def start_remote_worker(source, sink, num) do
+    remote = String.to_atom("worker@worker_#{num}")
     proxy_pid = Node.spawn_link(remote, DistributedPipeline, :start_worker_proxy, [source, sink])
     IO.puts "Proxy pid: #{inspect proxy_pid}"
 
@@ -28,38 +28,36 @@ defmodule DistributedPipeline do
 
   # DistributedPipeline.distributed_count
   def distributed_count do
-    {:ok, source} = WorkSource.start_link([1,10])
+    {:ok, source} = WorkSource.start_link([1,30])
     IO.puts "Source pid: #{inspect source}"
     {:ok, sink} = WorkSink.start_link(nil)
     IO.puts "Sink pid: #{inspect sink}"
 
 
-    {:ok, worker} = start_remote_worker(source, sink)
-    IO.puts "Worker pid: #{inspect worker}"
+    {:ok, worker_1} = start_remote_worker(source, sink, 1)
+    IO.puts "Worker 1 pid: #{inspect worker_1}"
+    {:ok, worker_2} = start_remote_worker(source, sink, 2)
+    IO.puts "Worker 2 pid: #{inspect worker_2}"
+    {:ok, worker_3} = start_remote_worker(source, sink, 3)
+    IO.puts "Worker 2 pid: #{inspect worker_2}"
 
-    GenServer.cast(worker, :start)
+    GenServer.cast(worker_1, :start)
+    GenServer.cast(worker_2, :start)
+    GenServer.cast(worker_3, :start)
 
-    cleanup(source, worker, sink)
+    cleanup(source, [worker_1, worker_2, worker_3], sink)
   end
 
-  def cleanup(source, worker, sink) do
+  def cleanup(source, workers, sink) do
     Utils.wait_for_process(sink)
 
-    GenServer.stop(worker)
-    Utils.wait_for_process(worker)
+    Enum.each(workers, fn worker ->
+      IO.puts "Stopping worker: #{inspect worker}"
+      GenServer.call(worker, :stop)
+    end)
 
-    GenServer.stop(source)
-    Utils.wait_for_process(source)
+    IO.puts "Stopping Source"
+    GenServer.call(source, :stop)
   end
 
-end
-
-defmodule Hello do
-  def say_hello do
-    IO.puts "Hello World"
-  end
-
-  def say_name(name) do
-    IO.puts "Hello #{name}"
-  end
 end

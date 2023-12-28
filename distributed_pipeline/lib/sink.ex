@@ -27,24 +27,32 @@ defmodule WorkSink do
   end
 
   @impl true
-  def handle_call(:register_worker, pid, {finished_workers}) do
+  def handle_call(:register_worker, {pid, ref}, {finished_workers}) do
     IO.puts "Registering worker #{inspect pid}"
     {:reply, :ok, {Map.put(finished_workers, pid, false)}}
   end
 
   @impl true
-  def handle_call(:unregister_worker, pid, {finished_workers}) do
+  def handle_call(:unregister_worker, {pid, ref}, {finished_workers}) do
     IO.puts "Unregistering worker #{inspect pid}"
     new_workers = Map.put(finished_workers, pid, true)
+    IO.puts "Finished workers: #{inspect new_workers}"
 
     if Map.values(new_workers) |> Enum.all?(& &1) do
       IO.puts "All workers finished"
-      {:stop, :normal, :ok, {new_workers}}
-    else
-      {:reply, :ok, {new_workers}}
+      GenServer.cast(self(), :stop)
     end
+    {:reply, :ok, {new_workers}}
   end
 
+  @impl true
+  def handle_call(:stop, _from, state) do
+    {:stop, :normal, :ok, state}
+  end
 
+  @impl true
+  def handle_cast(:stop, _state) do
+    {:stop, :normal, _state}
+  end
 
 end
