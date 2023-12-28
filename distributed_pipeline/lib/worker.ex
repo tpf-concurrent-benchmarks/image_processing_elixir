@@ -1,90 +1,81 @@
-defmodule WorkSource do
-
-  use GenServer
-
-  # the server is initialized with a start num and an end num
-  # the server returns an increasing number when asked for work, until it reaches the end num
-
-  def start_link(arg) do
-    GenServer.start_link(__MODULE__, arg, name: __MODULE__)
-  end
-
-  @impl true
-  def init([start_num, end_num]) do
-    {:ok, {start_num, end_num}}
-  end
-
-  @impl true
-  def handle_call(:get_work, _from, state) do
-    {start_num, end_num} = state
-
-    # wait a second before returning work
-    :timer.sleep(1000)
-
-    if start_num <= end_num do
-      {:reply, start_num, {start_num + 1, end_num}}
-    else
-      {:reply, :no_work, state}
-    end
-  end
-
-end
 
 defmodule Worker do
 
   use GenServer
 
-  # the worker is initialized with a server pid
-  # the worker asks the server for work, and then does the work
-  # the worker asks for more work until the server says there is no more work
-
-  def start_link(arg) do
-    GenServer.start_link(__MODULE__, arg, name: __MODULE__)
+  def start_link(source, sink) do
+    GenServer.start_link(__MODULE__, {source, sink})
   end
 
   @impl true
-  def init(server_pid) do
-    {:ok, server_pid}
+  def init({source, sink}) do
+    pending_work = []
+    {:ok, {source, sink, pending_work}}
   end
 
   @impl true
-  def handle_call(:start, _from, server_pid) do
-    ask_for_work(server_pid)
-    {:reply, :ok, server_pid}
+  def handle_cast(:start, state) do
+    source = state |> elem(0)
+    mark_ready(source)
+    {:noreply, state}
   end
 
   @impl true
-  def handle_cast(:start, server_pid) do
-    ask_for_work(server_pid)
-    {:noreply, server_pid}
-  end
+  def handle_cast({:work, work}, {source, sink, pending} = state) do
+    res = do_work(work)
 
-  def ask_for_work(server_pid) do
-    res = GenServer.call(server_pid, :get_work)
-    case res do
-      :no_work -> shutdown()
-      work ->
-        do_work(work)
-        ask_for_work(server_pid)
+    receiver = GenServer.call(sink, :request_receiver)
+    new_state = case receiver do
+      {:pid, pid} ->
+        GenServer.cast(pid, {:send, res}) # send result
+        state
+      :unavailable ->
+        {source, sink, [work | pending]}
     end
+
+    if length(pending) < pending_limit() do
+      mark_ready(source)
+    end
+
+    {:noreply, new_state}
+  end
+
+  @impl true
+  def handle_cast(:no_work, {_source, sink, _pending} = state) do
+    GenServer.call(sink, :unregister_worker)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:get_work, pid}, state) do
+    {source, sink, pending} = state
+    state = case pending do
+      [] ->
+        # This should only be casted after the sink had denied a receiver, 1:1.
+        IO.puts "No work available - This should not happen"
+        {source, sink, pending}
+      [work | rest] ->
+        GenServer.cast(pid, {:work, work}) # send result
+        mark_ready(source)
+        {source, sink, rest}
+    end
+    {:noreply, state}
+  end
+
+  defp mark_ready(source) do
+    GenServer.cast(source, {:ready, self()})
   end
 
   def do_work(work) do
     IO.puts "Doing work: #{work}"
+    work
+  end
+
+  def pending_limit do
+    10
   end
 
   def shutdown() do
-    IO.puts "No more work. Shutting down."
-    # terminate the process
     Process.exit(self(), :shutdown)
-  end
-end
-
-defmodule Utils do
-  def wait_for_process(pid) do
-    Process.monitor(pid)
-    receive do
-      {:DOWN, _ref, :process, ^pid, _reason} -> :ok
-    end
   end
 end
