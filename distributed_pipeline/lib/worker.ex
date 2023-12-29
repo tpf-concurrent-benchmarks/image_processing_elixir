@@ -1,6 +1,5 @@
 
 defmodule Worker do
-  @behaviour WorkerBehaviour
 
   use GenServer
 
@@ -44,7 +43,7 @@ defmodule Worker do
   end
 
   @impl true
-  def handle_cast(:no_work, {source, sink, pending, worker_type, done} = state) do
+  def handle_cast(:no_work, {source, sink, pending, worker_type, done}) do
     not done && GenServer.call(sink, :unregister_worker)
     {:noreply, {source, sink, pending, worker_type, true}}
   end

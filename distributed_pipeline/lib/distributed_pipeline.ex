@@ -42,7 +42,6 @@ defmodule DistributedPipeline do
     {:ok, broker_2} = WorkBroker.start_link()
     IO.puts "Broker 2 pid: #{inspect broker_2}"
 
-    max_nodes = 3
 
     stage_1_workers = Enum.map(1..2, fn num ->
       {:ok, pid} = start_remote_worker(FastWorker, source, broker_1, node_n(num))

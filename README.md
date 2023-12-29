@@ -8,6 +8,6 @@
 ## Next steps:
 
 - [x] Connect nodes programmatically
-- [ ] Make pull architecture
+- [x] Make pull architecture
 - [ ] Setup business nodes
 - [ ] Do business logic

@@ -22,19 +22,13 @@ defmodule WorkSink do
   end
 
   @impl true
-  def handle_cast({:work, data}, {fw, results}) do
-    # IO.puts "Sink received: #{data}"
-    {:noreply, {fw, results+1}}
-  end
-
-  @impl true
-  def handle_call(:register_worker, {pid, ref}, {finished_workers, results}) do
+  def handle_call(:register_worker, {pid, _ref}, {finished_workers, results}) do
     IO.puts "Registering worker #{inspect pid}"
     {:reply, :ok, {Map.put(finished_workers, pid, false), results}}
   end
 
   @impl true
-  def handle_call(:unregister_worker, {pid, ref}, {finished_workers, results}) do
+  def handle_call(:unregister_worker, {pid, _ref}, {finished_workers, results}) do
     IO.puts "Unregistering worker #{inspect pid}"
     new_workers = Map.put(finished_workers, pid, true)
     IO.puts "Finished workers: #{inspect new_workers}"
@@ -56,6 +50,12 @@ defmodule WorkSink do
   def handle_cast(:stop, {_fw, results}=state) do
     IO.puts "Sink finished with #{results} results"
     {:stop, :normal, state}
+  end
+
+  @impl true
+  def handle_cast({:work, _data}, {fw, results}) do
+    # IO.puts "Sink received: #{data}"
+    {:noreply, {fw, results+1}}
   end
 
   defp finish_message(results) do

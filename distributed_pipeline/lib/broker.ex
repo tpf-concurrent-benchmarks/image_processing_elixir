@@ -19,7 +19,7 @@ defmodule WorkBroker do
   end
 
   @impl true
-  def handle_call(:register_worker, {pid, _ref}, {w_pending, w_ready, w_finished, all_finished}) do
+  def handle_call(:register_worker, {pid, _ref}, {w_pending, w_ready, w_finished, _all_finished}) do
     IO.puts "Registering worker #{inspect pid}"
     new_finished = Map.put(w_finished, pid, false)
     {:reply, :ok, {w_pending, w_ready, new_finished, false}}
@@ -27,7 +27,7 @@ defmodule WorkBroker do
 
 
   @impl true
-  def handle_call(:unregister_worker, {pid, _ref}, {w_pending, w_ready, w_finished, all_finished}) do
+  def handle_call(:unregister_worker, {pid, _ref}, {w_pending, w_ready, w_finished, _all_finished}) do
     IO.puts "Unregistering worker #{inspect pid}"
     new_finished = Map.put(w_finished, pid, true)
     IO.puts "Finished workers: #{inspect new_finished}"
@@ -52,6 +52,11 @@ defmodule WorkBroker do
   end
 
   @impl true
+  def handle_call(:stop, _from, state) do
+    {:stop, :normal, :ok, state}
+  end
+
+  @impl true
   def handle_cast({:ready, pid}, {w_pending, w_ready, w_finished, all_finished}) do
 
     if length(w_pending) > 0 do
@@ -65,12 +70,6 @@ defmodule WorkBroker do
       {:noreply, {w_pending, [pid | w_ready], w_finished, all_finished}}
     end
 
-  end
-
-
-  @impl true
-  def handle_call(:stop, _from, state) do
-    {:stop, :normal, :ok, state}
   end
 
 end
