@@ -1,28 +1,29 @@
 
 defmodule Worker do
+  @behaviour WorkerBehaviour
 
   use GenServer
 
-  def start_link(source, sink) do
-    GenServer.start_link(__MODULE__, {source, sink})
+  def start_link(worker_type, source, sink) do
+    GenServer.start_link(__MODULE__, {worker_type, source, sink})
   end
 
   @impl true
-  def init({source, sink}) do
+  def init({worker_type, source, sink}) do
     pending_work = []
-    {:ok, {source, sink, pending_work}}
+    {:ok, {source, sink, pending_work, worker_type}}
   end
 
   @impl true
-  def handle_cast(:start, {source, sink, _pending} = state) do
+  def handle_cast(:start, {source, sink, _pending, _worker_type} = state) do
     GenServer.call(sink, :register_worker)
     mark_ready(source)
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:work, work}, {source, sink, pending} = state) do
-    res = do_work(work)
+  def handle_cast({:work, work}, {source, sink, pending, worker_type} = state) do
+    res = worker_type.do_work(work)
 
     receiver = GenServer.call(sink, :request_receiver)
     new_state = case receiver do
@@ -41,25 +42,25 @@ defmodule Worker do
   end
 
   @impl true
-  def handle_cast(:no_work, {_source, sink, _pending} = state) do
+  def handle_cast(:no_work, {_source, sink, _pending, _worker_type} = state) do
     GenServer.call(sink, :unregister_worker)
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:get_work, pid}, state) do
-    {source, sink, pending} = state
-    state = case pending do
+  def handle_cast({:get_work, pid}, {source, sink, pending, worker_type} = state) do
+
+    new_state = case pending do
       [] ->
         # This should only be casted after the sink had denied a receiver, 1:1.
         IO.puts "No work available - This should not happen"
-        {source, sink, pending}
+        state
       [work | rest] ->
         GenServer.cast(pid, {:work, work}) # send result
         mark_ready(source)
-        {source, sink, rest}
+        {source, sink, rest, worker_type}
     end
-    {:noreply, state}
+    {:noreply, new_state}
   end
 
   @impl true

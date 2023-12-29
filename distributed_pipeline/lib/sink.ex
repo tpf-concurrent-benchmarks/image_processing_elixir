@@ -12,7 +12,7 @@ defmodule WorkSink do
   @impl true
   def init(_arg) do
     finished_workers = Map.new()
-    {:ok, {finished_workers}}
+    {:ok, {finished_workers, 0}}
   end
 
   @impl true
@@ -21,19 +21,19 @@ defmodule WorkSink do
   end
 
   @impl true
-  def handle_cast({:send, data}, state) do
+  def handle_cast({:send, data}, {fw, results}) do
     IO.puts "Sink received: #{data}"
-    {:noreply, state}
+    {:noreply, {fw, results+1}}
   end
 
   @impl true
-  def handle_call(:register_worker, {pid, ref}, {finished_workers}) do
+  def handle_call(:register_worker, {pid, ref}, {finished_workers, results}) do
     IO.puts "Registering worker #{inspect pid}"
-    {:reply, :ok, {Map.put(finished_workers, pid, false)}}
+    {:reply, :ok, {Map.put(finished_workers, pid, false), results}}
   end
 
   @impl true
-  def handle_call(:unregister_worker, {pid, ref}, {finished_workers}) do
+  def handle_call(:unregister_worker, {pid, ref}, {finished_workers, results}) do
     IO.puts "Unregistering worker #{inspect pid}"
     new_workers = Map.put(finished_workers, pid, true)
     IO.puts "Finished workers: #{inspect new_workers}"
@@ -42,17 +42,18 @@ defmodule WorkSink do
       IO.puts "All workers finished"
       GenServer.cast(self(), :stop)
     end
-    {:reply, :ok, {new_workers}}
+    {:reply, :ok, {new_workers, results}}
   end
 
   @impl true
-  def handle_call(:stop, _from, state) do
+  def handle_call(:stop, _from, {_fw, results}=state) do
+    IO.puts "Sink finished with #{results} results"
     {:stop, :normal, :ok, state}
   end
 
   @impl true
-  def handle_cast(:stop, _state) do
-    {:stop, :normal, _state}
+  def handle_cast(:stop, state) do
+    {:stop, :normal, state}
   end
 
 end
