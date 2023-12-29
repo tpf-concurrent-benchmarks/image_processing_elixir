@@ -2,9 +2,6 @@ defmodule WorkSink do
 
   use GenServer
 
-  # the server is initialized with a start num and an end num
-  # the server returns an increasing number when asked for work, until it reaches the end num
-
   def start_link(arg) do
     GenServer.start_link(__MODULE__, arg, name: __MODULE__)
   end
@@ -22,7 +19,7 @@ defmodule WorkSink do
 
   @impl true
   def handle_cast({:send, data}, {fw, results}) do
-    IO.puts "Sink received: #{data}"
+    # IO.puts "Sink received: #{data}"
     {:noreply, {fw, results+1}}
   end
 
@@ -39,7 +36,7 @@ defmodule WorkSink do
     IO.puts "Finished workers: #{inspect new_workers}"
 
     if Map.values(new_workers) |> Enum.all?(& &1) do
-      IO.puts "All workers finished"
+      finish_message(results)
       GenServer.cast(self(), :stop)
     end
     {:reply, :ok, {new_workers, results}}
@@ -52,8 +49,24 @@ defmodule WorkSink do
   end
 
   @impl true
-  def handle_cast(:stop, state) do
+  def handle_cast(:stop, {_fw, results}=state) do
+    IO.puts "Sink finished with #{results} results"
     {:stop, :normal, state}
+  end
+
+  defp finish_message(results) do
+    total_width = 45  # adjust this to change the total width of the message
+    base_message = "### Sink finished with: results ###"
+    results_string = to_string(results)
+    padding_size = total_width - String.length(base_message) - String.length(results_string)
+    padded_results = String.pad_leading(results_string, padding_size + String.length(results_string)-1, " ")
+
+    message = "### Sink finished with: #{padded_results} results ###"
+    border = String.duplicate("#", total_width)
+
+    IO.puts border
+    IO.puts message
+    IO.puts border
   end
 
 end

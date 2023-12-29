@@ -28,7 +28,7 @@ defmodule DistributedPipeline do
 
   # DistributedPipeline.distributed_count
   def distributed_count do
-    {:ok, source} = WorkSource.start_link([1,30])
+    {:ok, source} = WorkSource.start_link([1,100])
     IO.puts "Source pid: #{inspect source}"
     {:ok, sink} = WorkSink.start_link(nil)
     IO.puts "Sink pid: #{inspect sink}"
