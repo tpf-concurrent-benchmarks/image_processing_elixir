@@ -2,6 +2,10 @@ defmodule WorkSink do
 
   use GenServer
 
+  def start_link() do
+    start_link(nil)
+  end
+
   def start_link(arg) do
     GenServer.start_link(__MODULE__, arg, name: __MODULE__)
   end
@@ -18,7 +22,7 @@ defmodule WorkSink do
   end
 
   @impl true
-  def handle_cast({:send, data}, {fw, results}) do
+  def handle_cast({:work, data}, {fw, results}) do
     # IO.puts "Sink received: #{data}"
     {:noreply, {fw, results+1}}
   end

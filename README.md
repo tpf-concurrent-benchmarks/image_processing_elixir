@@ -3,7 +3,7 @@
 ## What im doing rn:
 
 - make up
-- DistributedPipeline.distributed_count
+- DistributedPipeline.distributed_count(1000)
 
 ## Next steps:
 

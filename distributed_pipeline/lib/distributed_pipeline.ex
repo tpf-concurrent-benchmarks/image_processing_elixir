@@ -26,34 +26,58 @@ defmodule DistributedPipeline do
     end
   end
 
-  # DistributedPipeline.distributed_count
-  def distributed_count do
-    {:ok, source} = WorkSource.start_link([1,100])
-    IO.puts "Source pid: #{inspect source}"
-    {:ok, sink} = WorkSink.start_link(nil)
-    IO.puts "Sink pid: #{inspect sink}"
-
-
-    {:ok, worker_1} = start_remote_worker(FastWorker, source, sink, 1)
-    IO.puts "Worker 1 pid: #{inspect worker_1}"
-    {:ok, worker_2} = start_remote_worker(FastWorker, source, sink, 2)
-    IO.puts "Worker 2 pid: #{inspect worker_2}"
-    {:ok, worker_3} = start_remote_worker(FastWorker, source, sink, 3)
-    IO.puts "Worker 2 pid: #{inspect worker_3}"
-
-    GenServer.cast(worker_1, :start)
-    GenServer.cast(worker_2, :start)
-    GenServer.cast(worker_3, :start)
-
-    cleanup(source, [worker_1, worker_2, worker_3], sink)
+  def node_n(num) do
+    max_num = 3 # number worker replicas
+    rem(num, max_num) + 1
   end
 
-  def cleanup(source, workers, sink) do
+  # DistributedPipeline.distributed_count(1000)
+  def distributed_count(num) do
+    {:ok, source} = WorkSource.start_link([1,num])
+    IO.puts "Source pid: #{inspect source}"
+    {:ok, sink} = WorkSink.start_link()
+    IO.puts "Sink pid: #{inspect sink}"
+    {:ok, broker_1} = WorkBroker.start_link()
+    IO.puts "Broker 1 pid: #{inspect broker_1}"
+    {:ok, broker_2} = WorkBroker.start_link()
+    IO.puts "Broker 2 pid: #{inspect broker_2}"
+
+    max_nodes = 3
+
+    stage_1_workers = Enum.map(1..2, fn num ->
+      {:ok, pid} = start_remote_worker(FastWorker, source, broker_1, node_n(num))
+      GenServer.cast(pid, :start)
+      pid
+    end)
+
+    stage_2_workers = Enum.map(1..2, fn num ->
+      {:ok, pid} = start_remote_worker(FastWorker, broker_1, broker_2, node_n(num))
+      GenServer.cast(pid, :start)
+      pid
+    end)
+
+    stage_3_workers = Enum.map(1..2, fn num ->
+      {:ok, pid} = start_remote_worker(FastWorker, broker_2, sink, node_n(num))
+      GenServer.cast(pid, :start)
+      pid
+    end)
+
+    workers = stage_1_workers ++ stage_2_workers ++ stage_3_workers
+
+    cleanup(source, workers, [broker_1, broker_2], sink)
+  end
+
+  def cleanup(source, workers, brokers, sink) do
     Utils.wait_for_process(sink)
 
     Enum.each(workers, fn worker ->
       IO.puts "Stopping worker: #{inspect worker}"
       GenServer.call(worker, :stop)
+    end)
+
+    Enum.each(brokers, fn broker ->
+      IO.puts "Stopping broker: #{inspect broker}"
+      GenServer.call(broker, :stop)
     end)
 
     IO.puts "Stopping Source"
