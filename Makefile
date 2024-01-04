@@ -23,17 +23,17 @@ deploy_local:
 remove_local:
 	-docker service rm $(shell docker service ls -q -f name=ip_elixir) || echo "No services to remove"
 
-up:
+up: setup
 	make remove_local
 	make deploy_local
 	@echo "Waiting for services to start..."
 	@while [ $$(docker service ls --filter name=ip_elixir --format "{{.Replicas}}" | grep -v "0/0" | awk -F/ '{if ($$1!=$$2) print $$0}' | wc -l) -gt 0 ]; do sleep 1; done
 	@echo "Waiting for setup to complete..."
-		@for container in $$(docker ps -qf "name=ip_elixir"); do \
+		@for container in $$(docker ps -qf "name=ip_elixir" -f "status=running"); do \
+				echo "> Waiting for setup to complete for $$container"; \
 				while ! docker logs $$container 2>&1 | grep -q "Setup complete"; do \
 						sleep 1; \
 				done; \
-				echo ">> Setup complete for $$container"; \
 		done
 	@echo "All services are up and running."
 	make manager_iex

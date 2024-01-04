@@ -13,5 +13,6 @@
 
 - [x] Connect nodes programmatically
 - [x] Make pull architecture
-- [ ] Setup business nodes
-- [ ] Do business logic
+- [x] Setup business nodes
+- [x] Do business logic
+- [ ] Log Metrics

@@ -44,19 +44,19 @@ defmodule DistributedPipeline do
 
 
     stage_1_workers = Enum.map(1..2, fn num ->
-      {:ok, pid} = start_remote_worker(FastWorker, source, broker_1, node_n(num))
+      {:ok, pid} = start_remote_worker(FormatWorker, source, broker_1, node_n(num))
       GenServer.cast(pid, :start)
       pid
     end)
 
     stage_2_workers = Enum.map(1..2, fn num ->
-      {:ok, pid} = start_remote_worker(FastWorker, broker_1, broker_2, node_n(num))
+      {:ok, pid} = start_remote_worker(ResolutionWorker, broker_1, broker_2, node_n(num))
       GenServer.cast(pid, :start)
       pid
     end)
 
     stage_3_workers = Enum.map(1..2, fn num ->
-      {:ok, pid} = start_remote_worker(FastWorker, broker_2, sink, node_n(num))
+      {:ok, pid} = start_remote_worker(SizeWorker, broker_2, sink, node_n(num))
       GenServer.cast(pid, :start)
       pid
     end)
