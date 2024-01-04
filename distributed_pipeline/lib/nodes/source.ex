@@ -2,26 +2,25 @@ defmodule WorkSource do
 
   use GenServer
 
-  def start_link(arg) do
-    GenServer.start_link(__MODULE__, arg, name: __MODULE__)
+  def start_link(input_directory, batch_size) do
+    GenServer.start_link(__MODULE__, [input_directory, batch_size], name: __MODULE__)
   end
 
   @impl true
-  def init([start_num, end_num]) do
-    {:ok, {start_num, end_num}}
+  def init([input_directory, batch_size]) do
+    {:ok, walker} = DirWalker.start_link(input_directory)
+    {:ok, {walker, batch_size}}
   end
 
   @impl true
-  def handle_cast({:ready, pid}, {start_num, end_num}) do
-
-    if start_num <= end_num do
-      GenServer.cast(pid, {:work, start_num})
-      {:noreply, {start_num + 1, end_num}}
-    else
-      GenServer.cast(pid, :no_work)
-      {:noreply, {start_num, end_num}}
+  def handle_cast({:ready, pid}, {walker, batch_size}=state) do
+    case DirWalker.next(walker, batch_size) do
+      nil ->
+        GenServer.cast(pid, :no_work)
+      serving_files ->
+        GenServer.cast(pid, {:work, serving_files})
     end
-
+    {:noreply, state}
   end
 
   @impl true

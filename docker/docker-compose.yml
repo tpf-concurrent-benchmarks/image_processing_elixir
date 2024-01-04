@@ -2,22 +2,27 @@ version: "3.7"
 
 services:
   worker:
-    image: elixir:1.7.4-alpine
+    image: elixir:alpine
     hostname: worker_{{.Task.Slot}}
     working_dir: /app
     volumes:
       - ../distributed_pipeline:/app
-    command: iex --sname worker --cookie ${SECRET} -S mix
+      - ../shared:/app/shared
+      - ../scripts:/app/scripts
+    command: sh -c "/app/scripts/setup.sh ; iex --sname worker --cookie ${SECRET} -S mix"
     deploy:
       replicas: ${WORKER_REPLICAS}
 
   manager:
-    image: elixir:1.7.4-alpine
+    image: elixir:alpine
     hostname: manager
     tty: true
     stdin_open: true
     working_dir: /app
     volumes:
       - ../distributed_pipeline:/app
+      - ../shared:/app/shared
+      - ../scripts:/app/scripts
+    command: sh -c "/app/scripts/setup.sh ; tail -f /dev/null"
     environment:
       - WORKER_REPLICAS=${WORKER_REPLICAS}

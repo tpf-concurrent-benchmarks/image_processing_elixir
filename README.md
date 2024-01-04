@@ -1,9 +1,13 @@
 # image_processing_elixir
 
+## Setup
+
+`make setup`
+
 ## What im doing rn:
 
-- make up
-- DistributedPipeline.distributed_count(1000)
+- `make up`
+- `DistributedPipeline.distributed_count`
 
 ## Next steps:
 
