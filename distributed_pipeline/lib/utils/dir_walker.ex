@@ -1,17 +1,6 @@
-defmodule Utils do
-  def wait_for_process(pid) do
-    Process.monitor(pid)
-    receive do
-      {:DOWN, _ref, :process, ^pid, _reason} -> :ok
-    end
-  end
-end
+# Source: https://github.com/pragdave/dir_walker
 
 defmodule DirWalker do
-  # Source: https://github.com/pragdave/dir_walker
-
-  @moduledoc Path.join([__DIR__, "../README.md"]) |> File.read!
-
   require Logger
 
   use GenServer
