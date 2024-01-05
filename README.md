@@ -1,13 +1,9 @@
 # image_processing_elixir
 
-## Setup
-
-`make setup`
-
-## What im doing rn:
+## How to run:
 
 - `make up`
-- `DistributedPipeline.distributed_count`
+- `DistributedPipeline.distributed_ip`
 
 ## Next steps:
 

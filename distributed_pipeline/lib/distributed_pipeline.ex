@@ -31,8 +31,8 @@ defmodule DistributedPipeline do
     rem(num, max_num) + 1
   end
 
-  # DistributedPipeline.distributed_count
-  def distributed_count do
+  # DistributedPipeline.distributed_ip
+  def distributed_ip do
     {:ok, source} = WorkSource.start_link("shared/input", 5)
     IO.puts "Source pid: #{inspect source}"
     {:ok, sink} = WorkSink.start_link()
