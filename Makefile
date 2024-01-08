@@ -34,7 +34,7 @@ deploy_local:
 remove_local:
 	-docker service rm $(shell docker service ls -q -f name=ip_elixir) || echo "No services to remove"
 
-up: setup
+clean_local_deploy: setup
 	make remove_local
 	make deploy_local
 	@echo "Waiting for services to start..."
@@ -50,7 +50,14 @@ up: setup
 			fi \
 		done
 	@echo "All services are up and running."
+
+iex:
+	make clean_local_deploy
 	make manager_iex
+
+run:
+	make clean_local_deploy
+	make manager_run_ip
 
 full_remove_local:
 	docker stack rm ip_elixir
@@ -78,6 +85,9 @@ manager_iex:
 
 manager_shell:
 	docker exec -it $(shell docker ps -q -f name=ip_elixir_manager) sh
+
+manager_run_ip:
+	docker exec -it $(shell docker ps -q -f name=ip_elixir_manager) iex --sname manager --cookie $(SECRET) -S mix run -e "DistributedPipeline.distributed_ip()"
 
 manager_logs:
 	docker service logs -f $(shell docker service ls -q -f name=ip_elixir_manager) --raw

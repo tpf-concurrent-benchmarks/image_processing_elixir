@@ -2,13 +2,11 @@
 
 ## How to run:
 
-- `make up`
-- `DistributedPipeline.distributed_ip`
+- `make run`
 
 ## Next steps:
 
-- [x] Connect nodes programmatically
-- [x] Make pull architecture
-- [x] Setup business nodes
-- [x] Do business logic
 - [ ] Log Metrics
+- [ ] Document Distributed Pipeline
+- [ ] Document Image Processing Pipeline
+- [ ] Document Elixir Experiences
