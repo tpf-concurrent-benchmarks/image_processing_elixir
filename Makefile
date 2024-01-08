@@ -5,6 +5,8 @@ _script_permisions:
 	chmod -R +x ./scripts
 
 _common_folders:
+	mkdir -p graphite
+	mkdir -p grafana_config
 	mkdir -p shared
 	mkdir -p shared/input
 	rm -rf shared/formatted || true
@@ -18,7 +20,12 @@ _common_folders:
 setup: _script_permisions _common_folders
 
 deploy_local:
-	WORKER_REPLICAS=$(WORKER_REPLICAS) SECRET=$(SECRET) docker stack deploy -c docker/docker-compose.yml ip_elixir 
+	WORKER_REPLICAS=$(WORKER_REPLICAS) \
+	SECRET=$(SECRET) \
+	docker stack deploy \
+	-c docker/service.yml \
+	-c docker/monitor.yml \
+	ip_elixir
 
 remove_local:
 	-docker service rm $(shell docker service ls -q -f name=ip_elixir) || echo "No services to remove"
