@@ -1,7 +1,7 @@
 defmodule DistributedPipeline do
 
   def start_worker_proxy(worker_type, source, sink) do
-    {:ok, worker_pid} = Worker.start_link(worker_type, source, sink)
+    {:ok, worker_pid} = BatchedWorker.start_link(worker_type, source, sink)
 
     # Send worker_pid when asked for it
     receive do

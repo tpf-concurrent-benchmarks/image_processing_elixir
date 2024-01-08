@@ -1,19 +1,12 @@
 defmodule WorkerBehaviour do
   @callback do_work(any()) :: any()
-  @callback handle_file_path(any()) :: any()
   @callback name() :: charlist()
 end
-
-
 
 defmodule FormatWorker do
   @behaviour WorkerBehaviour
 
-  def do_work(work) do
-    Enum.map(work, &handle_file_path/1)
-  end
-
-  def handle_file_path(file_path) do
+  def do_work(file_path) do
     file_name = Path.basename(file_path)
     file_name_noext = String.split(file_name, ".") |> List.first
     output_file_path = "shared/formatted/#{file_name_noext}.png"
@@ -32,11 +25,7 @@ end
 defmodule ResolutionWorker do
   @behaviour WorkerBehaviour
 
-  def do_work(work) do
-    Enum.map(work, &handle_file_path/1)
-  end
-
-  def handle_file_path(file_path) do
+  def do_work(file_path) do
     file_name = Path.basename(file_path)
     output_file_path = "shared/scaled/#{file_name}"
 
@@ -55,11 +44,7 @@ end
 defmodule SizeWorker do
   @behaviour WorkerBehaviour
 
-  def do_work(work) do
-    Enum.map(work, &handle_file_path/1)
-  end
-
-  def handle_file_path(file_path) do
+  def do_work(file_path) do
     file_name = Path.basename(file_path)
     output_file_path = "shared/output/#{file_name}"
 
