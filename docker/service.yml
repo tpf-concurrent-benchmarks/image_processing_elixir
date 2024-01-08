@@ -1,17 +1,32 @@
 version: "3.7"
 
+x-worker-template: &worker-template
+  image: elixir:alpine
+  working_dir: /app
+  volumes:
+    - ../distributed_pipeline:/app
+    - ../shared:/app/shared
+    - ../scripts:/app/scripts
+  command: sh -c "/app/scripts/setup.sh ; iex --sname worker --cookie ${SECRET} -S mix"
+
 services:
-  worker:
-    image: elixir:alpine
-    hostname: worker_{{.Task.Slot}}
-    working_dir: /app
-    volumes:
-      - ../distributed_pipeline:/app
-      - ../shared:/app/shared
-      - ../scripts:/app/scripts
-    command: sh -c "/app/scripts/setup.sh ; iex --sname worker --cookie ${SECRET} -S mix"
+  format_worker:
+    <<: *worker-template
+    hostname: format_worker_{{.Task.Slot}}
     deploy:
-      replicas: ${WORKER_REPLICAS}
+      replicas: ${FORMAT_WORKER_REPLICAS}
+
+  resolution_worker:
+    <<: *worker-template
+    hostname: resolution_worker_{{.Task.Slot}}
+    deploy:
+      replicas: ${RESOLUTION_WORKER_REPLICAS}
+
+  size_worker:
+    <<: *worker-template
+    hostname: size_worker_{{.Task.Slot}}
+    deploy:
+      replicas: ${SIZE_WORKER_REPLICAS}
 
   manager:
     image: elixir:alpine
@@ -25,4 +40,6 @@ services:
       - ../scripts:/app/scripts
     command: sh -c "/app/scripts/setup.sh ; tail -f /dev/null"
     environment:
-      - WORKER_REPLICAS=${WORKER_REPLICAS}
+      - FORMAT_WORKER_REPLICAS=${FORMAT_WORKER_REPLICAS}
+      - RESOLUTION_WORKER_REPLICAS=${RESOLUTION_WORKER_REPLICAS}
+      - SIZE_WORKER_REPLICAS=${SIZE_WORKER_REPLICAS}

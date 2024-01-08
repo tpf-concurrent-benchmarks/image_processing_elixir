@@ -1,6 +1,7 @@
 defmodule WorkerBehaviour do
   @callback do_work(any()) :: any()
   @callback handle_file_path(any()) :: any()
+  @callback name() :: charlist()
 end
 
 
@@ -22,6 +23,10 @@ defmodule FormatWorker do
 
     output_file_path
   end
+
+  def name do
+    "format_worker"
+  end
 end
 
 defmodule ResolutionWorker do
@@ -41,6 +46,10 @@ defmodule ResolutionWorker do
 
     output_file_path
   end
+
+  def name do
+    "resolution_worker"
+  end
 end
 
 defmodule SizeWorker do
@@ -59,5 +68,9 @@ defmodule SizeWorker do
     Image.write(resized_img, output_file_path)
 
     output_file_path
+  end
+
+  def name do
+    "size_worker"
   end
 end
