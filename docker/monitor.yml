@@ -4,12 +4,12 @@ services:
   graphite:
     image: graphiteapp/graphite-statsd:1.1.10-4
     volumes:
-      - "../graphite_conf/statsd.config.js:/opt/statsd/config/udp.js:ro"
-      - "../graphite_conf/statsd.config.js:/opt/statsd/config/tcp.js:ro"
-      - "../graphite_conf/graphite.blacklist.conf:/opt/graphite/conf/blacklist.conf:ro"
-      - "../graphite_conf/graphite.carbon.conf:/opt/graphite/conf/carbon.conf:ro"
-      - "../graphite_conf/graphite.storage-schemas.conf:/opt/graphite/conf/storage-schemas.conf:ro"
-      - "../graphite:/opt/graphite/storage/:rw"
+      - "../configs/graphite_conf/statsd.config.js:/opt/statsd/config/udp.js:ro"
+      - "../configs/graphite_conf/statsd.config.js:/opt/statsd/config/tcp.js:ro"
+      - "../configs/graphite_conf/graphite.blacklist.conf:/opt/graphite/conf/blacklist.conf:ro"
+      - "../configs/graphite_conf/graphite.carbon.conf:/opt/graphite/conf/carbon.conf:ro"
+      - "../configs/graphite_conf/graphite.storage-schemas.conf:/opt/graphite/conf/storage-schemas.conf:ro"
+      - "../configs/graphite:/opt/graphite/storage/:rw"
     ports:
       - "8080:8080"
       - "8125:8125/udp"
@@ -80,4 +80,4 @@ services:
 
 volumes:
   grafana_config:
-      external: true
+    external: true

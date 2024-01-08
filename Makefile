@@ -1,12 +1,15 @@
 WORKER_REPLICAS ?= 3
+FORMAT_WORKER_REPLICAS ?= 2
+RESOLUTION_WORKER_REPLICAS ?= 2
+SIZE_WORKER_REPLICAS ?= 2
 SECRET ?= secret
 
 _script_permisions:
 	chmod -R +x ./scripts
 
 _common_folders:
-	mkdir -p graphite
-	mkdir -p grafana_config
+	mkdir -p configs/graphite
+	mkdir -p configs/grafana_config
 	mkdir -p shared
 	mkdir -p shared/input
 	rm -rf shared/formatted || true
@@ -21,6 +24,9 @@ setup: _script_permisions _common_folders
 
 deploy_local:
 	WORKER_REPLICAS=$(WORKER_REPLICAS) \
+	FORMAT_WORKER_REPLICAS=$(FORMAT_WORKER_REPLICAS) \
+	RESOLUTION_WORKER_REPLICAS=$(RESOLUTION_WORKER_REPLICAS) \
+	SIZE_WORKER_REPLICAS=$(SIZE_WORKER_REPLICAS) \
 	SECRET=$(SECRET) \
 	docker stack deploy \
 	-c docker/service.yml \
@@ -37,10 +43,13 @@ up: setup
 	@while [ $$(docker service ls --filter name=ip_elixir --format "{{.Replicas}}" | grep -v "0/0" | awk -F/ '{if ($$1!=$$2) print $$0}' | wc -l) -gt 0 ]; do sleep 1; done
 	@echo "Waiting for setup to complete..."
 		@for container in $$(docker ps -qf "name=ip_elixir" -f "status=running"); do \
-				echo "> Waiting for setup to complete for $$container"; \
-				while ! docker logs $$container 2>&1 | grep -q "Setup complete"; do \
-						sleep 1; \
+			if echo $$container | grep -q -e "worker" -e "manager"; then \
+				container_name=$$(docker inspect --format '{{.Name}}' $$container); \
+				echo "> Waiting for setup to complete for $$container $$container_name"; \
+				while docker inspect --format '{{.State.Running}}' $$container | grep -q "true" && ! docker logs $$container 2>&1 | grep -q "Setup complete"; do \
+					sleep 1; \
 				done; \
+			fi \
 		done
 	@echo "All services are up and running."
 	make manager_iex
