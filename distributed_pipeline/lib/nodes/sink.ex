@@ -59,14 +59,8 @@ defmodule WorkSink do
   end
 
   defp finish_message(results) do
-    total_width = 45  # adjust this to change the total width of the message
-    base_message = "### Sink finished with: results ###"
-    results_string = to_string(results)
-    padding_size = total_width - String.length(base_message) - String.length(results_string)
-    padded_results = String.pad_leading(results_string, padding_size + String.length(results_string)-1, " ")
-
-    message = "### Sink finished with: #{padded_results} results ###"
-    border = String.duplicate("#", total_width)
+    message = "### Sink finished with: #{results} results ###"
+    border = String.duplicate("#", String.length(message))
 
     IO.puts border
     IO.puts message
