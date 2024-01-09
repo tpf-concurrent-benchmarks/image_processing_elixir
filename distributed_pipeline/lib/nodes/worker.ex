@@ -63,7 +63,8 @@ defmodule BaseWorker do
       end
 
       @impl true
-      def handle_call(:stop, _from, state) do
+      def handle_call(:stop, _from, {_source, _sink, _pending, _worker_type, _done, other} = state) do
+        cleanup(other)
         {:stop, :normal, :ok, state}
       end
 
@@ -77,6 +78,11 @@ defmodule BaseWorker do
 
       defp do_work(_worker_type, _work, _other), do: raise "Not implemented"
       defoverridable do_work: 3
+
+      defp cleanup(_other) do
+        :ok
+      end
+      defoverridable cleanup: 1
     end
   end
 end
@@ -102,22 +108,27 @@ defmodule MeasuredBatchedWorker do
 
   def init({worker_type, source, sink}) do
     pending_work = []
-    MetricsLogger.init()
-    {:ok, {source, sink, pending_work, worker_type, false, nil}}
+    replica = System.get_env("REPLICA")
+    {:ok, logger} = CustomMetricsLogger.connect(worker_type.name, replica)
+    {:ok, {source, sink, pending_work, worker_type, false, logger}}
   end
 
-  def do_work_and_meassure( worker_type, work, nil ) do
+  def do_work_and_measure( worker_type, work, logger ) do
     start_time = :os.system_time(:millisecond)
     res = worker_type.do_work(work)
     end_time = :os.system_time(:millisecond)
     duration = end_time - start_time
-    MetricsLogger.timing("work_time", duration)
-    MetricsLogger.increment("results_produced")
+    MetricsLogger.timing(logger, "work_time", duration)
+    MetricsLogger.increment(logger, "results_produced")
     res
   end
 
-  defp do_work(worker_type, work, stastd_client) do
-    Enum.map(work, &do_work_and_meassure(worker_type, &1, stastd_client))
+  defp do_work(worker_type, work, logger) do
+    Enum.map(work, &do_work_and_measure(worker_type, &1, logger))
+  end
+
+  defp cleanup(logger) do
+    MetricsLogger.close(logger)
   end
 
 end

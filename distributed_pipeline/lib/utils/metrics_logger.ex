@@ -1,15 +1,39 @@
 defmodule MetricsLogger do
+  def connect(host, port, prefix) do
+    {:ok, socket} = :gen_udp.open(0, active: false)
+    {:ok, {socket, host, port, prefix}}
+  end
 
-  use Statix, runtime_config: true
+  def increment( {socket, host, port, prefix}, metric, value \\ 1) do
+    :gen_udp.send(socket, host, port, "#{prefix}.#{metric}:#{value}|c")
+  end
 
-  def init() do
-    host = "graphite"
+  def gauge( {socket, host, port, prefix}, metric, value) do
+    :gen_udp.send(socket, host, port, "#{prefix}.#{metric}:#{value}|g")
+  end
+
+  def timing( {socket, host, port, prefix}, metric, value) do
+    :gen_udp.send(socket, host, port, "#{prefix}.#{metric}:#{value}|ms")
+  end
+
+  def close( {socket, _host, _port, _prefix} ) do
+    :gen_udp.close(socket)
+  end
+end
+
+defmodule CustomMetricsLogger do
+
+  def connect(name, replica) do
+    replica_n = String.to_integer(replica) - 1
+    prefix = "#{name}_#{replica_n}"
+    connect(prefix)
+  end
+
+  def connect(prefix) do
+    host = 'graphite'
     port = 8125
-    prefix = elem(:inet.gethostname(), 1)
-    IO.puts("prefix: #{inspect prefix}")
-    config = [prefix: prefix, host: host, port: port]
-    :ok = connect(config)
-    {:ok, config}
+    IO.puts("Logger connecting to #{host}:#{port} with prefix #{prefix}")
+    MetricsLogger.connect(host, port, prefix)
   end
 
 end

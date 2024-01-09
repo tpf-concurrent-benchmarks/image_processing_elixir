@@ -28,13 +28,13 @@ defmodule DistributedPipeline do
   end
 
   def main do
-    MetricsLogger.init()
+    {:ok, logger} = CustomMetricsLogger.connect("manager")
     start_time = :os.system_time(:millisecond)
     distributed_ip()
     end_time = :os.system_time(:millisecond)
     duration = end_time - start_time
     IO.puts("Completion time: #{duration} ms")
-    MetricsLogger.timing("completion_time", duration)
+    MetricsLogger.timing(logger, "completion_time", duration)
   end
 
   # DistributedPipeline.distributed_ip

@@ -8,6 +8,8 @@ x-worker-template: &worker-template
     - ../shared:/app/shared
     - ../scripts:/app/scripts
   command: sh -c "/app/scripts/setup.sh ; iex --sname worker --cookie ${SECRET} -S mix"
+  environment:
+    - REPLICA={{.Task.Slot}}
 
 services:
   format_worker:
