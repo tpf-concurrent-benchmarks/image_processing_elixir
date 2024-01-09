@@ -13,6 +13,7 @@ defmodule BaseWorker do
         other = nil
         {:ok, {source, sink, pending_work, worker_type, false, other}}
       end
+      defoverridable init: 1
 
       @impl true
       def handle_cast(:start, {source, sink, _pending, _worker_type, _done, _other} = state) do
@@ -94,4 +95,29 @@ defmodule BatchedWorker do
   defp do_work(worker_type, work, _other) do
     Enum.map(work, &worker_type.do_work/1)
   end
+end
+
+defmodule MeasuredBatchedWorker do
+  use BaseWorker
+
+  def init({worker_type, source, sink}) do
+    pending_work = []
+    MetricsLogger.init()
+    {:ok, {source, sink, pending_work, worker_type, false, nil}}
+  end
+
+  def do_work_and_meassure( worker_type, work, nil ) do
+    start_time = :os.system_time(:millisecond)
+    res = worker_type.do_work(work)
+    end_time = :os.system_time(:millisecond)
+    duration = end_time - start_time
+    MetricsLogger.timing("work_time", duration)
+    MetricsLogger.increment("results_produced")
+    res
+  end
+
+  defp do_work(worker_type, work, stastd_client) do
+    Enum.map(work, &do_work_and_meassure(worker_type, &1, stastd_client))
+  end
+
 end

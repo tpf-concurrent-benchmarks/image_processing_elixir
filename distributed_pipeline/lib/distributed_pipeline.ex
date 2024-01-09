@@ -1,7 +1,7 @@
 defmodule DistributedPipeline do
 
   def start_worker_proxy(worker_type, source, sink) do
-    {:ok, worker_pid} = BatchedWorker.start_link(worker_type, source, sink)
+    {:ok, worker_pid} = MeasuredBatchedWorker.start_link(worker_type, source, sink)
 
     # Send worker_pid when asked for it
     receive do
@@ -25,6 +25,16 @@ defmodule DistributedPipeline do
       {:pid_res, worker_pid} ->
         {:ok, worker_pid}
     end
+  end
+
+  def main do
+    MetricsLogger.init()
+    start_time = :os.system_time(:millisecond)
+    distributed_ip()
+    end_time = :os.system_time(:millisecond)
+    duration = end_time - start_time
+    IO.puts("Completion time: #{duration} ms")
+    MetricsLogger.timing("completion_time", duration)
   end
 
   # DistributedPipeline.distributed_ip
