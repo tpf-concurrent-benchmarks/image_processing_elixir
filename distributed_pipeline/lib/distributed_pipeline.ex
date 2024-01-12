@@ -35,6 +35,7 @@ defmodule DistributedPipeline do
     duration = end_time - start_time
     IO.puts("Completion time: #{duration} ms")
     MetricsLogger.timing(logger, "completion_time", duration)
+    MetricsLogger.close(logger)
   end
 
   # DistributedPipeline.distributed_ip
