@@ -33,6 +33,12 @@ defmodule WorkBroker do
     IO.puts "Finished workers: #{inspect new_finished}"
 
     if Map.values(new_finished) |> Enum.all?(& &1) do
+
+      # Sleep for 30 seconds to prevent race conditions. Hacky but should work (for current network conditions)
+      # Since there are no message order guarantees between multiple nodes
+      # we give some leeway to ensure the shutdown happens last.
+      Process.sleep(30*1000)
+
       Enum.each(w_ready, fn worker ->
         GenServer.cast(worker, :no_work)
       end)
