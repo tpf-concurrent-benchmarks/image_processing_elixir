@@ -32,10 +32,13 @@ deploy_local:
 	ip_elixir
 
 remove_local:
+	docker stack rm ip_elixir
+
+remove_local_containers:
 	-docker service rm $(shell docker service ls -q -f name=ip_elixir) || echo "No services to remove"
 
 clean_local_deploy: setup
-	make remove_local
+	make remove_local_containers
 	make deploy_local
 	@echo "Waiting for services to start..."
 	@while [ $$(docker service ls --filter name=ip_elixir --format "{{.Replicas}}" | grep -v "0/0" | awk -F/ '{if ($$1!=$$2) print $$0}' | wc -l) -gt 0 ]; do sleep 1; done
