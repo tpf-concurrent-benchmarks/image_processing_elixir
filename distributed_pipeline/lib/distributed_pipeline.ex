@@ -40,7 +40,7 @@ defmodule DistributedPipeline do
 
   # DistributedPipeline.distributed_ip
   def distributed_ip do
-    {:ok, source} = WorkSource.start_link("shared/input", 5)
+    {:ok, source} = WorkSource.start_link("shared/input", 25)
     IO.puts "Source pid: #{inspect source}"
     {:ok, sink} = WorkSink.start_link()
     IO.puts "Sink pid: #{inspect sink}"
