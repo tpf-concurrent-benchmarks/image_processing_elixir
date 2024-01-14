@@ -215,6 +215,226 @@ The broker implements:
 
 ### Worker registration & un-registration
 
+#### Base workflow
+
+When workers start, they register themselves to the sink, and then enter a loop where they ask for work until there is no more work to do, at which point they unregister themselves.
+
+```mermaid
+sequenceDiagram
+  participant Source
+  participant Worker
+  participant Sink
+
+  Worker ->> Sink : register_worker
+
+  loop while there is work
+
+    Worker ->> Source : ready
+    Source ->>+ Worker : work
+    Worker ->>+ Sink : request_receiver
+    Sink -->>- Worker : sink
+    Worker ->> Sink : work
+    Worker ->>- Source : ready
+
+  end
+
+  Worker ->>+ Source : ready
+  Source ->>- Worker : no_work
+  activate Worker
+  Worker ->>- Sink : unregister_worker
+  note over Sink: Finished
+```
+
+#### Multiple workers
+
+When all workers registered to a sink have unregistered, it considers the pipeline finished.
+
+```mermaid
+sequenceDiagram
+  participant Source
+  participant Worker1
+  participant Worker2
+  participant Sink
+
+  Worker1 ->> Sink : register_worker
+  Worker2 ->> Sink : register_worker
+
+  note over Source,Sink: While there is work: do work
+
+  Worker1 ->>+ Source : ready
+  Source ->>- Worker1 : no_work
+  activate Worker1
+  Worker1 ->>- Sink : unregister_worker
+
+  Worker2 ->>+ Source : ready
+  Source ->>- Worker2 : no_work
+  activate Worker2
+  Worker2 ->>- Sink : unregister_worker
+
+  note over Sink: Finished
+```
+
+#### Brokers
+
+Brokers act as both sources and sinks, so they have to both handle both handle registration and un-registration, and propagate them to the next stage.
+
+The next stage can have 2 types of workers:
+
+- Ready workers, that are ready to receive work: these will be sent `no_work` as soon as all previous stages have finished.
+- Unready workers, that are still working: these will be sent `no_work` when they ask for more work.
+
+Brokers themselves don't finish, it is the sink which signals the end of the pipeline, and triggers the cleanup process of nodes.
+
+```mermaid
+sequenceDiagram
+  participant SrcWorker
+  participant Broker
+  participant ReadyWorker
+  participant UnreadyWorker
+  participant Sink
+
+  SrcWorker ->> Broker : register_worker
+
+  note over SrcWorker,Sink: While there is work: do work
+
+  ReadyWorker ->>+ Broker : ready
+  deactivate Broker
+
+  SrcWorker ->>+ Broker : unregister_worker
+  Broker ->>- ReadyWorker : no_work
+  activate ReadyWorker
+  ReadyWorker ->>- Sink : unregister_worker
+
+  UnreadyWorker ->>+ Broker : ready
+  Broker ->>- UnreadyWorker : no_work
+  activate UnreadyWorker
+  UnreadyWorker ->>- Sink: unregister_worker
+
+  note over Sink: Finished
+```
+
 ### Work pushing
 
+When the posterior stage is faster, and thus ready to receive work, the previous workers can push work to it.
+
+```mermaid
+sequenceDiagram
+  participant Source
+  participant SlowWorker
+  participant Broker
+  participant FastWorker
+
+  FastWorker ->>+ Broker : ready
+  deactivate Broker
+
+  loop while there is work
+
+    SlowWorker ->>+ Source : ready
+    Source ->>- SlowWorker : work
+
+    activate SlowWorker
+    SlowWorker ->>+ Broker : request_receiver
+    Broker -->>- SlowWorker : FastWorker
+    SlowWorker ->>+ FastWorker : work
+    SlowWorker ->>- Source : ready
+
+    FastWorker ->>+ Broker : ready
+    deactivate FastWorker
+    deactivate Broker
+
+  end
+
+  SlowWorker ->>+ Source : ready
+  Source ->>- SlowWorker : no_work
+  activate SlowWorker
+  SlowWorker ->>- Broker : unregister_worker
+  activate Broker
+  Broker ->>- FastWorker : no_work
+  activate FastWorker
+  deactivate FastWorker
+
+```
+
+This workflow is preferred, since it involves less message passing and state. But in a real scenario we cam expect both push and pulling behaviors to be interleaved and change over time.
+
 ### Work pulling
+
+When the posterior stage is slower, and thus not ready to receive work, the previous workers can queue work for it, which will be pulled when the stage is ready.
+
+```mermaid
+sequenceDiagram
+  participant Source
+  participant FastWorker
+  participant Broker
+  participant SlowWorker
+
+  FastWorker ->>+ Source : ready
+  Source ->>- FastWorker : work
+  activate FastWorker
+  FastWorker ->>+ Broker : request_receiver
+  Broker ->>- FastWorker : unavailable
+  FastWorker ->> Source : ready
+
+  deactivate FastWorker
+  activate Source
+  Source ->>- FastWorker : work
+  activate FastWorker
+  FastWorker ->>+ Broker : request_receiver
+  Broker ->>- FastWorker : unavailable
+  note over FastWorker : Result queue is full
+  deactivate FastWorker
+
+  loop while there is work
+
+    SlowWorker ->>+ Broker : ready
+    Broker ->>- FastWorker : get_work(SlowWorker)
+    activate FastWorker
+    FastWorker ->>+ SlowWorker : work
+    FastWorker ->>- Source : ready
+
+    activate Source
+    Source ->>- FastWorker : work
+    activate FastWorker
+    FastWorker ->>+ Broker : request_receiver
+    Broker ->>- FastWorker : unavailable
+    note over FastWorker : Result queue is full
+    deactivate FastWorker
+
+    SlowWorker -x- Broker : ready
+
+  end
+
+  SlowWorker ->>+ Broker : ready
+  Broker ->>- FastWorker : get_work(SlowWorker)
+  activate FastWorker
+  FastWorker ->>+ SlowWorker : work
+  FastWorker ->>- Source : ready
+
+  activate Source
+  Source ->>- FastWorker : no_work
+  activate FastWorker
+  note over FastWorker : Result queue has 1 item
+  deactivate FastWorker
+
+
+  SlowWorker ->>- Broker : ready
+  activate Broker
+
+  Broker ->>- FastWorker : get_work(SlowWorker)
+  activate FastWorker
+  FastWorker ->>+ SlowWorker : work
+  FastWorker ->>- Source : ready
+
+  activate Source
+  Source ->>- FastWorker : no_work
+  activate FastWorker
+  FastWorker ->>+ Broker : unregister_worker
+  deactivate FastWorker
+  deactivate Broker
+
+  SlowWorker ->>- Broker : ready
+  activate Broker
+  Broker ->>- SlowWorker : no_work
+  activate SlowWorker
+  deactivate SlowWorker
+```
