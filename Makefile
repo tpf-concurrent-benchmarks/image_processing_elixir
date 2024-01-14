@@ -54,16 +54,9 @@ clean_local_deploy: setup
 		done
 	@echo "All services are up and running."
 
-iex:
-	make clean_local_deploy
-	make manager_iex
+iex: clean_local_deploy manager_iex
 
-run:
-	make clean_local_deploy
-	make manager_run_ip
-
-full_remove_local:
-	docker stack rm ip_elixir
+run: clean_local_deploy manager_run_ip
 
 worker_iex:
 	@if [ -z "$(num)" ]; then \
