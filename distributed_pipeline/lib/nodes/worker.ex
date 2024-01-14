@@ -64,7 +64,8 @@ defmodule BaseWorker do
 
         # Unregister worker if there is no more work
         if done && length(tail) == 0 do
-          # TODO: We could ping the worker to sync (?)
+          # We could ping the worker to sync and ensure ordering.
+          # But I think it is unnecessary w/ the single-ready-policy
           GenServer.call(sink, :unregister_worker)
         end
 
