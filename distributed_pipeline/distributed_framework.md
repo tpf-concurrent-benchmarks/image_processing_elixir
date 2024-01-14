@@ -176,13 +176,23 @@ The `Worker` module implements the `BaseWorker` behaviour, and is the simplest w
 
 It takes care of the communication protocol side of the worker node, calling upon the worker type to handle the work unit.
 
-Its main flow is:
+Its main flow (push) is:
 
 - Marking itself as ready to do work
 - Receiving and handling work
   - If possible, pushing it to the next stage
   - Else, queuing the result
   - Then start again (if the result queue is not full)
+
+But work can also be pulled:
+
+- Receiving a get_work message
+  > This should only happen if there is queued work, as the worker keeps track of it
+- Sending queued work to the next stage
+- If it is not 'done' and it just freed the queue (queue has 1 space left), mark as ready
+- If it is 'done' and there is no more queued work, unregister the worker
+
+> A worker is 'done' when it has received a `no_work` message from the source.
 
 Thus not saturating the posterior stages of the pipeline (as they have to be ready), but still keeping the worker busy until its result queue is full.
 
@@ -423,11 +433,7 @@ sequenceDiagram
   Broker ->>- FastWorker : get_work(SlowWorker)
   activate FastWorker
   FastWorker ->>+ SlowWorker : work
-  FastWorker ->>- Source : ready
 
-  activate Source
-  Source ->>- FastWorker : no_work
-  activate FastWorker
   FastWorker ->>+ Broker : unregister_worker
   deactivate FastWorker
   deactivate Broker
