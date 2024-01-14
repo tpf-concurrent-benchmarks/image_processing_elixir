@@ -10,12 +10,13 @@ The objective of this project is to benchmark the language on a real-world distr
 
 - The project is deployed using docker swarm, `docker swarm init` initializes it.
 
-- Running `make run` deploys and runs the system, it is equivalent to:
-  - `make setup` will make other required initializations: Creates required folders and gives scripts permissions.
-  - `make clean_local_deploy` will remove old containers and deploy the system, waiting for the services to be ready.
-  - `make manager_iex` will open an iex session on the manager node
-    > `make iex` will execute up to this step, without running the system.
+- To run the system, we can:
+  - Use `make iex` to deploy the system and open an iex session on the manager node. It is equivalent to:
+    - `make setup` will make other required initializations: Creates required folders and gives scripts permissions.
+    - `make clean_local_deploy` will remove old containers and deploy the system, waiting for the services to be ready.
+    - `make manager_iex` will open an iex session on the manager node.
   - Run `DistributedPipeline.main` (on iex) to start the pipeline.
+    > `make run` deploys and runs the system directly, but can fail.
 
 ## Implementation details
 
