@@ -3,7 +3,7 @@ RESOLUTION_WORKER_REPLICAS ?= 2
 SIZE_WORKER_REPLICAS ?= 2
 SECRET ?= secret
 
-_script_permisions:
+_script_permissions:
 	chmod -R +x ./scripts
 
 _common_folders:
@@ -19,7 +19,7 @@ _common_folders:
 	mkdir -p shared/output
 .PHONY: _common_folders
 
-setup: _script_permisions _common_folders
+setup: _script_permissions _common_folders
 
 deploy_local:
 	FORMAT_WORKER_REPLICAS=$(FORMAT_WORKER_REPLICAS) \
@@ -93,3 +93,25 @@ worker_logs:
 
 worker1_logs:
 	docker service logs -f $(shell docker service ls -q -f name=ip_elixir_worker.1) --raw
+
+# Cloud specific
+
+_mount_nfs:
+	mkdir -p shared
+	sudo mount -o rw,intr $(NFS_SERVER_IP):/$(NFS_SERVER_PATH) ./shared
+.PHONY: _mount_nfs
+
+# Requires the following env variables:
+# - NFS_SERVER_IP
+# - NFS_SERVER_PATH
+deploy_cloud: remove_local
+	NFS_SERVER_IP=$(NFS_SERVER_IP) NFS_SERVER_PATH=$(NFS_SERVER_PATH) make _mount_nfs
+	sudo make _common_folders
+	FORMAT_WORKER_REPLICAS=$(FORMAT_WORKER_REPLICAS) \
+	RESOLUTION_WORKER_REPLICAS=$(RESOLUTION_WORKER_REPLICAS) \
+	SIZE_WORKER_REPLICAS=$(SIZE_WORKER_REPLICAS) \
+	SECRET=$(SECRET) \
+	sudo -E docker stack deploy \
+	-c docker/service-cloud.yml \
+	-c docker/monitor.yml \
+	ip_elixir
