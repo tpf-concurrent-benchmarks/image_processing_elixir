@@ -18,7 +18,7 @@ defmodule FormatWorker do
   end
 
   def name do
-    "format_worker"
+    "format"
   end
 end
 
@@ -37,7 +37,7 @@ defmodule ResolutionWorker do
   end
 
   def name do
-    "resolution_worker"
+    "resolution"
   end
 end
 
@@ -56,6 +56,6 @@ defmodule SizeWorker do
   end
 
   def name do
-    "size_worker"
+    "size"
   end
 end
