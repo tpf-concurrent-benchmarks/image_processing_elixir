@@ -14,7 +14,7 @@ defmodule DistributedPipeline do
   end
 
   def start_remote_worker(worker_type, source, sink, num) do
-    remote = String.to_atom("worker@#{worker_type.name()}_#{num}")
+    remote = String.to_atom("worker@#{worker_type.name()}_worker_#{num}")
     IO.puts "Remote: #{inspect remote}"
     proxy_pid = Node.spawn_link(remote, DistributedPipeline, :start_worker_proxy, [worker_type, source, sink])
     IO.puts "Proxy pid: #{inspect proxy_pid}"

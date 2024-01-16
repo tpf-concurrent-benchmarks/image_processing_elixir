@@ -25,7 +25,7 @@ defmodule CustomMetricsLogger do
 
   def connect(name, replica) do
     replica_n = String.to_integer(replica) - 1
-    prefix = "#{name}_#{replica_n}"
+    prefix = "#{name}/#{replica_n}"
     connect(prefix)
   end
 
