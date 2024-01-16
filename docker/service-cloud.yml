@@ -45,6 +45,12 @@ services:
       - FORMAT_WORKER_REPLICAS=${FORMAT_WORKER_REPLICAS}
       - RESOLUTION_WORKER_REPLICAS=${RESOLUTION_WORKER_REPLICAS}
       - SIZE_WORKER_REPLICAS=${SIZE_WORKER_REPLICAS}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
 
 volumes:
   nfs:
