@@ -32,7 +32,7 @@ defmodule BaseWorker do
             GenServer.cast(pid, {:work, res}) # send result
             state
           :unavailable ->
-            {source, sink, [work | pending], worker_type, done, other}
+            {source, sink, [res | pending], worker_type, done, other}
         end
 
         if length(pending) < pending_limit() do
