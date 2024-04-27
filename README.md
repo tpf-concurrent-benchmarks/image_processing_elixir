@@ -34,3 +34,7 @@ The architecture is slightly modified, needing to add broker nodes to the system
 - Afterwards: `make manager_iex` will open an iex session on the manager node.
 - Afterwards: Run `DistributedPipeline.main` (on iex) to start the pipeline.
 - `make remove_local` will remove the system containers.
+
+## Libraries
+
+- [image](https://github.com/elixir-image/image)
