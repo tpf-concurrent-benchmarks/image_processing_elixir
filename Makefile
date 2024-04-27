@@ -19,6 +19,9 @@ _common_folders:
 	mkdir -p shared/output
 .PHONY: _common_folders
 
+template_data: _common_folders
+	wget https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg -P shared/input/
+
 setup: _script_permissions _common_folders
 
 deploy_local:
