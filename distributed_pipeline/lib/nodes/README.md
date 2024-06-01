@@ -45,13 +45,6 @@ The pipeline is starts on a data source that send work to stages of workers, eac
 
 ### Deployment
 
-- The project already has a pipeline with 3 steps of workers that do image transformations.
-
-- For such use case, 2 external libraries are being used
-
-  - `image`: (imported with hex)
-  - `dir_walker`: copied into utils
-
 - The project is deployed using docker swarm, `docker swarm init` initializes it.
 
 - To run the system, we can:
@@ -60,10 +53,6 @@ The pipeline is starts on a data source that send work to stages of workers, eac
     - `make clean_local_deploy` will remove old containers and deploy the system, waiting for the services to be ready.
     - `make manager_iex` will open an iex session on the manager node.
   - Run `DistributedPipeline.main` (on iex) to start the pipeline.
-
-> You might find unused logging capabilities in the code.
-> These are left from the original project where some metrics are logged using statsd.
-> I've left them since they show how the framework can be extended.
 
 ### Pipeline definition
 
