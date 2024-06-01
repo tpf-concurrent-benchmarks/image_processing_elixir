@@ -171,7 +171,7 @@ It is also coupled with the `BatchedWorker` archetype, since it generates batche
 
 The source implements `handle_cast {:ready, pid}`,
 
-- Sending `{:work, serving_files} if there are files to process.
+- Sending `{:work, serving_files}` if there are files to process.
 - Sending `:no_work` if there are no more files left.
 
 ### Sink
